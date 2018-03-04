@@ -142,6 +142,7 @@ public class SongListActivity extends AppCompatActivity {
             String index = name.substring(0, 1);
             index = index.toUpperCase();
 
+            // TODO Put all non alphabetical indices into a single index of "#"
             if (!mapIndex.containsKey(index)) {
                 mapIndex.put(index, i);
             }
@@ -233,9 +234,9 @@ public class SongListActivity extends AppCompatActivity {
             public ViewHolder(View view) {
                 super(view);
                 mView = view;
-                mImageView = (ImageView) view.findViewById(R.id.imageView);
                 mIdView = (TextView) view.findViewById(R.id.id);
                 mContentView = (TextView) view.findViewById(R.id.titleArtist);
+                mImageView = (ImageView) view.findViewById(R.id.imageView);
             }
 
             @Override
