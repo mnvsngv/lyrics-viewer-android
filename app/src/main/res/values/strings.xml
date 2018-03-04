@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MP3 Lyrics Viewer</string>
+    <string name="title_song_detail">Song Detail</string>
+    <string name="emptyImageDescription" />
+</resources>
