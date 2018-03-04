@@ -8,6 +8,7 @@ import android.database.CursorJoiner;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -50,7 +51,7 @@ public class SongListActivity extends AppCompatActivity {
      * device.
      */
     private boolean mTwoPane;
-    private RecyclerView recyclerView;
+    private static RecyclerView recyclerView;
     private boolean isBound = false;
 
     @Override
@@ -123,8 +124,8 @@ public class SongListActivity extends AppCompatActivity {
 
                         SongContent.Song song = new SongContent.Song(String.valueOf(thisId),
                                 thisArtist + " - " + thisTitle, filePath, albumId, albumArtPath);
-                        if(albumArtPath != null)
-                            song.thumbnail = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(albumArtPath), 200, 200, false);
+//                        if(albumArtPath != null)
+//                            song.thumbnail = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(albumArtPath), 200, 200, false);
 
                         SongContent.addItem(song);
                         break;
@@ -138,27 +139,9 @@ public class SongListActivity extends AppCompatActivity {
                 }
             }
 
-//            if (musicCursor != null && musicCursor.moveToFirst()) {
-//                //add songs to list
-//                do {
-//                    long thisId = musicCursor.getLong(idColumn);
-//                    String thisTitle = musicCursor.getString(titleColumn);
-//                    String thisArtist = musicCursor.getString(artistColumn);
-//                    String filePath = musicCursor.getString(dataColumn);
-//                    long albumId = musicCursor.getLong(albumIdColumn);
-//
-//
-//                    SongContent.Song song = new SongContent.Song(String.valueOf(thisId),
-//                            thisArtist + " - " + thisTitle, filePath, albumId);
-////                    song.thumbnail = getThumbnail(albumId);
-//
-//                    SongContent.addItem(song);
-//                }
-//                while (musicCursor.moveToNext());
-//                musicCursor.close();
-//            }
-
             Collections.sort(SongContent.ITEMS);
+
+            new ThumbnailsUpdateTask().execute(SongContent.ITEMS.toArray(new SongContent.Song[0]));
         }
         recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(SongContent.ITEMS, calculateIndexesForName(SongContent.ITEMS)));
         FastScrollRecyclerViewItemDecoration decoration = new FastScrollRecyclerViewItemDecoration(this);
@@ -167,7 +150,9 @@ public class SongListActivity extends AppCompatActivity {
 
     public void getThumbnails() {
         for(SongContent.Song song : SongContent.ITEMS) {
-            song.thumbnail = getThumbnail(song.albumId);
+            if(song.albumArtPath != null) {
+                song.thumbnail = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(song.albumArtPath), 200, 200, false);
+            }
             RecyclerView.Adapter adapter = recyclerView.getAdapter();
             if(adapter != null && !recyclerView.isComputingLayout()) adapter.notifyDataSetChanged();
         }
@@ -199,6 +184,26 @@ public class SongListActivity extends AppCompatActivity {
             String path = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
             return BitmapFactory.decodeFile(path);
         } else return null;
+    }
+
+    private static class ThumbnailsUpdateTask extends AsyncTask<SongContent.Song, Integer, Integer> {
+
+        @Override
+        protected Integer doInBackground(SongContent.Song... songs) {
+            for(SongContent.Song song : SongContent.ITEMS) {
+                if(song.albumArtPath != null) {
+                    song.thumbnail = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(song.albumArtPath), 200, 200, false);
+                }
+                publishProgress(5);
+            }
+            return SongContent.ITEMS.size();
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... progress) {
+            RecyclerView.Adapter adapter = recyclerView.getAdapter();
+            if(adapter != null && !recyclerView.isComputingLayout()) adapter.notifyDataSetChanged();
+        }
     }
 
     public class SimpleItemRecyclerViewAdapter
