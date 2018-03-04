@@ -23,13 +23,15 @@ public class SongContent {
         public final String titleArtist;
         public final String filePath;
         public final long albumId;
+        public final String albumArtPath;
         public Bitmap thumbnail;
 
-        public Song(String id, String titleArtist, String filePath, long albumId) {
+        public Song(String id, String titleArtist, String filePath, long albumId, String albumArtPath) {
             this.id = id;
             this.titleArtist = titleArtist;
             this.filePath = filePath;
             this.albumId = albumId;
+            this.albumArtPath = albumArtPath;
         }
 
         @Override
