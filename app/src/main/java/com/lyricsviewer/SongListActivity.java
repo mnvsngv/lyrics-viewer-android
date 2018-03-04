@@ -184,7 +184,6 @@ public class SongListActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
             holder.mItem = mValues.get(position);
-            holder.mIdView.setText(mValues.get(position).id);
             holder.mContentView.setText(mValues.get(position).titleArtist);
 
 //            GlideApp.with(this).load(mValues.get(position).thumbnail).into(imageView);
@@ -227,14 +226,12 @@ public class SongListActivity extends AppCompatActivity {
         public class ViewHolder extends RecyclerView.ViewHolder {
             public final View mView;
             public final ImageView mImageView;
-            public final TextView mIdView;
             public final TextView mContentView;
             public SongContent.Song mItem;
 
             public ViewHolder(View view) {
                 super(view);
                 mView = view;
-                mIdView = (TextView) view.findViewById(R.id.id);
                 mContentView = (TextView) view.findViewById(R.id.titleArtist);
                 mImageView = (ImageView) view.findViewById(R.id.imageView);
             }

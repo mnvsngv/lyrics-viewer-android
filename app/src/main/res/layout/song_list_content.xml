@@ -8,17 +8,10 @@
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="0dp"
-        android:layout_height="96dp"
+        android:layout_height="50dp"
         android:layout_weight="0"
         android:contentDescription="@string/emptyImageDescription"
         app:srcCompat="@android:color/background_dark" />
-
-    <TextView
-        android:id="@+id/id"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/text_margin"
-        android:textAppearance="?attr/textAppearanceListItem" />
 
     <TextView
         android:id="@+id/titleArtist"
