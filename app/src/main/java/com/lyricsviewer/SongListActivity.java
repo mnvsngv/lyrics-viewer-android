@@ -96,7 +96,7 @@ public class SongListActivity extends AppCompatActivity {
                     null,
                     null,
                     null,
-                    MediaStore.Audio.Media.ALBUM_KEY);
+                    MediaStore.Audio.Media.ALBUM_ID);
 
             int titleColumn = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.TITLE);
@@ -111,17 +111,15 @@ public class SongListActivity extends AppCompatActivity {
                     null,
                     null,
                     null,
-                    MediaStore.Audio.Albums.ALBUM_KEY);
+                    MediaStore.Audio.Albums._ID);
             int albumArtColumn = albumCursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART);
 
-            CursorJoiner joiner = new CursorJoiner(musicCursor, new String[] {MediaStore.Audio.Media.ALBUM_KEY},
-                    albumCursor, new String[] {MediaStore.Audio.Albums.ALBUM_KEY});
+            CursorJoiner joiner = new CursorJoiner(musicCursor, new String[] {MediaStore.Audio.Media.ALBUM_ID},
+                    albumCursor, new String[] {MediaStore.Audio.Albums._ID});
 
-            /*
-                TODO repeated albums are getting skipped since CursorJoiner wants the key to be unique
-                So the 2 cursors will have to be sorted (already done) and then manually compared &
-                iterated over.
-             */
+            long previousAlbumId = -1;
+            String previousAlbumArtPath = null;
+
             for(CursorJoiner.Result result : joiner) {
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
@@ -132,24 +130,26 @@ public class SongListActivity extends AppCompatActivity {
                 SongContent.Song song = null;
 
                 switch(result) {
-                    case BOTH:
-                        albumArtPath = albumCursor.getString(albumArtColumn);
-                        song = new SongContent.Song(String.valueOf(thisId),
-                                thisArtist + " - " + thisTitle, filePath, albumId, albumArtPath);
-
-                        SongContent.addItem(song);
+                    case LEFT:
+                        if(albumId == previousAlbumId) {
+                            albumArtPath = previousAlbumArtPath;
+                        }
                         break;
 
-                    case LEFT:
-                        song = new SongContent.Song(String.valueOf(thisId),
-                                    thisArtist + " - " + thisTitle, filePath, albumId, null);
-
-                        SongContent.addItem(song);
+                    case BOTH:
+                        albumArtPath = albumCursor.getString(albumArtColumn);
+                        previousAlbumId = albumId;
+                        previousAlbumArtPath = albumArtPath;
                         break;
 
                     default:
                         break;
                 }
+
+                song = new SongContent.Song(String.valueOf(thisId),
+                        thisArtist + " - " + thisTitle, filePath, albumId, albumArtPath);
+
+                SongContent.addItem(song);
             }
 
             Collections.sort(SongContent.ITEMS);
