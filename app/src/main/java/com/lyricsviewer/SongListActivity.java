@@ -92,7 +92,12 @@ public class SongListActivity extends AppCompatActivity {
 
             ContentResolver musicResolver = getContentResolver();
 
-            Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
+            Cursor musicCursor = musicResolver.query(musicUri,
+                    null,
+                    null,
+                    null,
+                    MediaStore.Audio.Media.ALBUM_KEY);
+
             int titleColumn = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.TITLE);
             int idColumn = musicCursor.getColumnIndex
@@ -103,35 +108,43 @@ public class SongListActivity extends AppCompatActivity {
             int albumIdColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID);
 
             Cursor albumCursor = getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    new String[] {MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
                     null,
                     null,
-                    null);
+                    null,
+                    MediaStore.Audio.Albums.ALBUM_KEY);
             int albumArtColumn = albumCursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART);
 
-            CursorJoiner joiner = new CursorJoiner(musicCursor, new String[] {MediaStore.Audio.Media.ALBUM_ID},
-                    albumCursor, new String[] {MediaStore.Audio.Albums._ID});
+            CursorJoiner joiner = new CursorJoiner(musicCursor, new String[] {MediaStore.Audio.Media.ALBUM_KEY},
+                    albumCursor, new String[] {MediaStore.Audio.Albums.ALBUM_KEY});
 
+            /*
+                TODO repeated albums are getting skipped since CursorJoiner wants the key to be unique
+                So the 2 cursors will have to be sorted (already done) and then manually compared &
+                iterated over.
+             */
             for(CursorJoiner.Result result : joiner) {
+                long thisId = musicCursor.getLong(idColumn);
+                String thisTitle = musicCursor.getString(titleColumn);
+                String thisArtist = musicCursor.getString(artistColumn);
+                String filePath = musicCursor.getString(dataColumn);
+                long albumId = musicCursor.getLong(albumIdColumn);
+                String albumArtPath = null;
+                SongContent.Song song = null;
+
                 switch(result) {
                     case BOTH:
-                        long thisId = musicCursor.getLong(idColumn);
-                        String thisTitle = musicCursor.getString(titleColumn);
-                        String thisArtist = musicCursor.getString(artistColumn);
-                        String filePath = musicCursor.getString(dataColumn);
-                        long albumId = musicCursor.getLong(albumIdColumn);
-                        String albumArtPath = albumCursor.getString(albumArtColumn);
-
-                        SongContent.Song song = new SongContent.Song(String.valueOf(thisId),
+                        albumArtPath = albumCursor.getString(albumArtColumn);
+                        song = new SongContent.Song(String.valueOf(thisId),
                                 thisArtist + " - " + thisTitle, filePath, albumId, albumArtPath);
-//                        if(albumArtPath != null)
-//                            song.thumbnail = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(albumArtPath), 200, 200, false);
 
                         SongContent.addItem(song);
                         break;
 
                     case LEFT:
+                        song = new SongContent.Song(String.valueOf(thisId),
+                                    thisArtist + " - " + thisTitle, filePath, albumId, null);
 
+                        SongContent.addItem(song);
                         break;
 
                     default:
@@ -140,22 +153,11 @@ public class SongListActivity extends AppCompatActivity {
             }
 
             Collections.sort(SongContent.ITEMS);
-
             new ThumbnailsUpdateTask().execute(SongContent.ITEMS.toArray(new SongContent.Song[0]));
         }
         recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(SongContent.ITEMS, calculateIndexesForName(SongContent.ITEMS)));
         FastScrollRecyclerViewItemDecoration decoration = new FastScrollRecyclerViewItemDecoration(this);
         recyclerView.addItemDecoration(decoration);
-    }
-
-    public void getThumbnails() {
-        for(SongContent.Song song : SongContent.ITEMS) {
-            if(song.albumArtPath != null) {
-                song.thumbnail = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(song.albumArtPath), 200, 200, false);
-            }
-            RecyclerView.Adapter adapter = recyclerView.getAdapter();
-            if(adapter != null && !recyclerView.isComputingLayout()) adapter.notifyDataSetChanged();
-        }
     }
 
     private HashMap<String, Integer> calculateIndexesForName(List<SongContent.Song> items) {
@@ -171,19 +173,6 @@ public class SongListActivity extends AppCompatActivity {
             }
         }
         return mapIndex;
-    }
-
-    private Bitmap getThumbnail(long albumId) {
-        Cursor cursor = getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                new String[] {MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
-                MediaStore.Audio.Albums._ID+ "=?",
-                new String[] {String.valueOf(albumId)},
-                null);
-
-        if (cursor.moveToFirst()) {
-            String path = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
-            return BitmapFactory.decodeFile(path);
-        } else return null;
     }
 
     private static class ThumbnailsUpdateTask extends AsyncTask<SongContent.Song, Integer, Integer> {
@@ -276,6 +265,7 @@ public class SongListActivity extends AppCompatActivity {
                 super(view);
                 mView = view;
                 mContentView = (TextView) view.findViewById(R.id.titleArtist);
+                mContentView.setSelected(true);
                 mImageView = (ImageView) view.findViewById(R.id.imageView);
             }
 
