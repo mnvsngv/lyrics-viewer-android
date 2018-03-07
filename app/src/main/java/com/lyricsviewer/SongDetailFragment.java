@@ -58,20 +58,12 @@ public class SongDetailFragment extends Fragment {
             CollapsingToolbarLayout appBarLayout = (CollapsingToolbarLayout) activity.findViewById(R.id.toolbar_layout);
             if (appBarLayout != null) {
                 appBarLayout.setTitle(mItem.title);
+                DisplayMetrics metrics = getResources().getDisplayMetrics();
+                int height = (int) (metrics.widthPixels / ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT));
+                appBarLayout.setMinimumHeight(height);
 
                 Bitmap albumArt = BitmapFactory.decodeFile(mItem.albumArtPath);
-                Resources resources = getResources();
-                DisplayMetrics metrics = resources.getDisplayMetrics();
-                int height = (int) (200 / ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT));
-                int width = metrics.widthPixels;
-                int scaledHeight = width;
-
-
-                Bitmap scaledAlbumArt = Bitmap.createScaledBitmap(albumArt, width, scaledHeight, false);
-
-
-                Bitmap croppedAlbumArt = Bitmap.createBitmap(scaledAlbumArt, 0, 0, albumArt.getWidth(), height);
-                appBarLayout.setContentScrim(new BitmapDrawable(getResources(), croppedAlbumArt));
+                appBarLayout.setContentScrim(new BitmapDrawable(getResources(), albumArt));
                 appBarLayout.setScrimVisibleHeightTrigger(Integer.MAX_VALUE);
             }
         }
