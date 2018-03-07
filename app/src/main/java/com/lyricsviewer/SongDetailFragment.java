@@ -1,9 +1,15 @@
 package com.lyricsviewer;
 
 import android.app.Activity;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,7 +33,7 @@ public class SongDetailFragment extends Fragment {
     public static final String ARG_ITEM_ID = "item_id";
 
     /**
-     * The dummy titleArtist this fragment is presenting.
+     * The dummy title this fragment is presenting.
      */
     private SongContent.Song mItem;
 
@@ -43,15 +49,30 @@ public class SongDetailFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments().containsKey(ARG_ITEM_ID)) {
-            // Load the dummy titleArtist specified by the fragment
+            // Load the dummy title specified by the fragment
             // arguments. In a real-world scenario, use a Loader
-            // to load titleArtist from a titleArtist provider.
+            // to load title from a title provider.
             mItem = SongContent.ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
 
             Activity activity = this.getActivity();
             CollapsingToolbarLayout appBarLayout = (CollapsingToolbarLayout) activity.findViewById(R.id.toolbar_layout);
             if (appBarLayout != null) {
-                appBarLayout.setTitle(mItem.titleArtist);
+                appBarLayout.setTitle(mItem.title);
+
+                Bitmap albumArt = BitmapFactory.decodeFile(mItem.albumArtPath);
+                Resources resources = getResources();
+                DisplayMetrics metrics = resources.getDisplayMetrics();
+                int height = (int) (200 / ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT));
+                int width = metrics.widthPixels;
+                int scaledHeight = width;
+
+
+                Bitmap scaledAlbumArt = Bitmap.createScaledBitmap(albumArt, width, scaledHeight, false);
+
+
+                Bitmap croppedAlbumArt = Bitmap.createBitmap(scaledAlbumArt, 0, 0, albumArt.getWidth(), height);
+                appBarLayout.setContentScrim(new BitmapDrawable(getResources(), croppedAlbumArt));
+                appBarLayout.setScrimVisibleHeightTrigger(Integer.MAX_VALUE);
             }
         }
     }
@@ -61,7 +82,7 @@ public class SongDetailFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.song_detail, container, false);
 
-        // Show the dummy titleArtist as text in a TextView.
+        // Show the dummy title as text in a TextView.
         if (mItem != null) {
             try {
                 ((TextView) rootView.findViewById(R.id.song_detail)).setText(LyricsFinder.findLyrics(mItem.filePath));

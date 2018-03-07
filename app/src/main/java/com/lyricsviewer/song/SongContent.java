@@ -20,15 +20,17 @@ public class SongContent {
 
     public static class Song implements Comparable<SongContent.Song> {
         public final String id;
-        public final String titleArtist;
+        public final String title;
+        public final String artist;
         public final String filePath;
         public final long albumId;
         public final String albumArtPath;
         public Bitmap thumbnail;
 
-        public Song(String id, String titleArtist, String filePath, long albumId, String albumArtPath) {
+        public Song(String id, String title, String artist, String filePath, long albumId, String albumArtPath) {
             this.id = id;
-            this.titleArtist = titleArtist;
+            this.title = title;
+            this.artist = artist;
             this.filePath = filePath;
             this.albumId = albumId;
             this.albumArtPath = albumArtPath;
@@ -36,12 +38,12 @@ public class SongContent {
 
         @Override
         public String toString() {
-            return titleArtist;
+            return title;
         }
 
         @Override
         public int compareTo(@NonNull Song o) {
-            return this.titleArtist.compareTo(o.titleArtist);
+            return this.title.compareTo(o.title);
         }
     }
 }

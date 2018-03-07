@@ -10,7 +10,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -21,7 +20,6 @@ import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -30,7 +28,6 @@ import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecycler
 import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecyclerViewItemDecoration;
 import com.lyricsviewer.song.SongContent;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -147,7 +144,7 @@ public class SongListActivity extends AppCompatActivity {
                 }
 
                 song = new SongContent.Song(String.valueOf(thisId),
-                        thisArtist + " - " + thisTitle, filePath, albumId, albumArtPath);
+                        thisTitle, thisArtist, filePath, albumId, albumArtPath);
 
                 SongContent.addItem(song);
             }
@@ -163,7 +160,7 @@ public class SongListActivity extends AppCompatActivity {
     private HashMap<String, Integer> calculateIndexesForName(List<SongContent.Song> items) {
         HashMap<String, Integer> mapIndex = new LinkedHashMap<String, Integer>();
         for (int i = 0; i < items.size(); i++) {
-            String name = items.get(i).titleArtist;
+            String name = items.get(i).title;
             String index = name.substring(0, 1);
             index = index.toUpperCase();
 
@@ -215,12 +212,15 @@ public class SongListActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
-            holder.mItem = mValues.get(position);
-            holder.mContentView.setText(mValues.get(position).titleArtist);
+            SongContent.Song song = mValues.get(position);
+            holder.mItem = song;
 
-//            GlideApp.with(this).load(mValues.get(position).thumbnail).into(imageView);
+            holder.mTitleView.setText(song.title);
+            holder.mTitleView.setSelected(true);
+            holder.mArtistView.setText(song.artist);
+            holder.mArtistView.setSelected(true);
 
-            holder.mImageView.setImageBitmap(mValues.get(position).thumbnail);
+            holder.mImageView.setImageBitmap(song.thumbnail);
 
             holder.mView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -258,20 +258,21 @@ public class SongListActivity extends AppCompatActivity {
         public class ViewHolder extends RecyclerView.ViewHolder {
             public final View mView;
             public final ImageView mImageView;
-            public final TextView mContentView;
+            public final TextView mTitleView;
+            public final TextView mArtistView;
             public SongContent.Song mItem;
 
             public ViewHolder(View view) {
                 super(view);
                 mView = view;
-                mContentView = (TextView) view.findViewById(R.id.titleArtist);
-                mContentView.setSelected(true);
+                mTitleView = (TextView) view.findViewById(R.id.title);
+                mArtistView = (TextView) view.findViewById(R.id.artist);
                 mImageView = (ImageView) view.findViewById(R.id.imageView);
             }
 
             @Override
             public String toString() {
-                return super.toString() + " '" + mContentView.getText() + "'";
+                return super.toString() + " '" + mTitleView.getText() + "'";
             }
         }
     }
