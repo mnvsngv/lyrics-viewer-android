@@ -25,7 +25,6 @@ public class SongContent {
         public final String filePath;
         public final long albumId;
         public final String albumArtPath;
-        public Bitmap thumbnail;
 
         public Song(String id, String title, String artist, String filePath, long albumId, String albumArtPath) {
             this.id = id;

@@ -1,16 +1,10 @@
 package com.lyricsviewer;
 
-import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.CursorJoiner;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -19,19 +13,20 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 
 import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecyclerViewInterface;
 import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecyclerViewItemDecoration;
+import com.lyricsviewer.decoration.SimpleDividerItemDecoration;
 import com.lyricsviewer.song.SongContent;
+import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -52,8 +47,7 @@ public class SongListActivity extends AppCompatActivity {
      * device.
      */
     private boolean mTwoPane;
-    private static RecyclerView recyclerView;
-    private boolean isBound = false;
+    public static View nowPlaying;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,19 +58,18 @@ public class SongListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        nowPlaying = findViewById(R.id.nowPlaying);
+        ImageView imageView = (ImageView) nowPlaying.findViewById(R.id.imageView);
+        TextView title = (TextView) nowPlaying.findViewById(R.id.title);
+        TextView artist = (TextView) nowPlaying.findViewById(R.id.artist);
 
-        View recyclerView = findViewById(R.id.song_list);
+        imageView.setImageBitmap(null);
+        title.setText("<no song>");
+        artist.setText("<unknown>");
+
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.song_list);
         assert recyclerView != null;
-        this.recyclerView = (RecyclerView) recyclerView;
-        setupRecyclerView(this.recyclerView);
+        setupRecyclerView(recyclerView);
 
         if (findViewById(R.id.song_detail_container) != null) {
             // The detail container view will be present only in the
@@ -85,30 +78,8 @@ public class SongListActivity extends AppCompatActivity {
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
-
-        IntentFilter iF = new IntentFilter();
-        iF.addAction("com.android.music.metachanged");
-        iF.addAction("com.android.music.playstatechanged");
-        iF.addAction("com.android.music.playbackcomplete");
-        iF.addAction("com.android.music.queuechanged");
-
-        registerReceiver(mReceiver, iF);
     }
 
-    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            String cmd = intent.getStringExtra("command");
-            Log.v("tag ", action + " / " + cmd);
-            String artist = intent.getStringExtra("artist");
-            String album = intent.getStringExtra("album");
-            String track = intent.getStringExtra("track");
-            Log.v("tag", artist + ":" + album + ":" + track);
-            Toast.makeText(SongListActivity.this, track, Toast.LENGTH_SHORT).show();
-        }
-    };
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
         if (SongContent.ITEMS.size() == 0) {
@@ -177,11 +148,12 @@ public class SongListActivity extends AppCompatActivity {
             }
 
             Collections.sort(SongContent.ITEMS);
-            new ThumbnailsUpdateTask().execute(SongContent.ITEMS.toArray(new SongContent.Song[0]));
         }
         recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(SongContent.ITEMS, calculateIndexesForName(SongContent.ITEMS)));
         FastScrollRecyclerViewItemDecoration decoration = new FastScrollRecyclerViewItemDecoration(this);
+
         recyclerView.addItemDecoration(decoration);
+        recyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
     }
 
     private HashMap<String, Integer> calculateIndexesForName(List<SongContent.Song> items) {
@@ -197,26 +169,6 @@ public class SongListActivity extends AppCompatActivity {
             }
         }
         return mapIndex;
-    }
-
-    private static class ThumbnailsUpdateTask extends AsyncTask<SongContent.Song, Integer, Integer> {
-
-        @Override
-        protected Integer doInBackground(SongContent.Song... songs) {
-            for(SongContent.Song song : SongContent.ITEMS) {
-                if(song.albumArtPath != null) {
-                    song.thumbnail = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(song.albumArtPath), 200, 200, false);
-                }
-                publishProgress(5);
-            }
-            return SongContent.ITEMS.size();
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... progress) {
-            RecyclerView.Adapter adapter = recyclerView.getAdapter();
-            if(adapter != null && !recyclerView.isComputingLayout()) adapter.notifyDataSetChanged();
-        }
     }
 
     public class SimpleItemRecyclerViewAdapter
@@ -247,7 +199,12 @@ public class SongListActivity extends AppCompatActivity {
             holder.mArtistView.setText(song.artist);
             holder.mArtistView.setSelected(true);
 
-            holder.mImageView.setImageBitmap(song.thumbnail);
+            if(song.albumArtPath!= null) {
+                Picasso.with(getApplicationContext())
+                        .load(new File(song.albumArtPath))
+                        .resize(150, 150)
+                        .into(holder.mImageView);
+            }
 
             holder.mView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -261,15 +218,10 @@ public class SongListActivity extends AppCompatActivity {
                                 .replace(R.id.song_detail_container, fragment)
                                 .commit();
                     } else {
-                        Context context = v.getContext();
-                        Intent intent = new Intent(context, SongDetailActivity.class);
-                        intent.putExtra(SongDetailFragment.ARG_ITEM_ID, holder.mItem.id);
-
-                        context.startActivity(intent);
+                        Utils.fireLyricsActivityIntent(v.getContext(), holder.mItem.id);
                     }
                 }
             });
-            isBound = true;
         }
 
         @Override
@@ -303,4 +255,5 @@ public class SongListActivity extends AppCompatActivity {
             }
         }
     }
+
 }
