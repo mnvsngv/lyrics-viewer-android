@@ -1,11 +1,16 @@
 package com.lyricsviewer;
 
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -23,6 +28,7 @@ import android.widget.TextView;
 import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecyclerViewInterface;
 import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecyclerViewItemDecoration;
 import com.lyricsviewer.decoration.SimpleDividerItemDecoration;
+import com.lyricsviewer.receiver.MusicBroadcastReceiver;
 import com.lyricsviewer.song.SongContent;
 import com.squareup.picasso.Picasso;
 
@@ -48,6 +54,7 @@ public class SongListActivity extends AppCompatActivity {
      */
     private boolean mTwoPane;
     public static View nowPlaying;
+    private Service mService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +85,10 @@ public class SongListActivity extends AppCompatActivity {
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
+
+        Intent serviceIntent = new Intent(this, MusicReceiverService.class);
+        startService(serviceIntent);
+        bindService(serviceIntent, mServiceConnection, BIND_AUTO_CREATE);
     }
 
 
@@ -255,5 +266,15 @@ public class SongListActivity extends AppCompatActivity {
             }
         }
     }
+
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mService = ((MusicReceiverService.MusicBinder)service).getService();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mService = null;
+        }
+    };
 
 }
