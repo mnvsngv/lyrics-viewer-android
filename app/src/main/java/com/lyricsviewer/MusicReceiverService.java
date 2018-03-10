@@ -40,7 +40,7 @@ public class MusicReceiverService extends Service {
         intentFilter.addAction("com.android.music.playbackcomplete");
         intentFilter.addAction("com.android.music.queuechanged");
 
-        registerReceiver(new MusicBroadcastReceiver(), intentFilter);
+        registerReceiver(new MusicBroadcastReceiver(getApplicationContext()), intentFilter);
 
         return START_STICKY;
     }

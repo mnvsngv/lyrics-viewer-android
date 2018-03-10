@@ -2,22 +2,14 @@ package com.lyricsviewer;
 
 import android.app.Service;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.database.Cursor;
-import android.database.CursorJoiner;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +20,6 @@ import android.widget.TextView;
 import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecyclerViewInterface;
 import com.lyricsviewer.codecomputerlove.fastrecyclerviewdemo.FastScrollRecyclerViewItemDecoration;
 import com.lyricsviewer.decoration.SimpleDividerItemDecoration;
-import com.lyricsviewer.receiver.MusicBroadcastReceiver;
 import com.lyricsviewer.song.SongContent;
 import com.squareup.picasso.Picasso;
 
@@ -94,69 +85,7 @@ public class SongListActivity extends AppCompatActivity {
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
         if (SongContent.ITEMS.size() == 0) {
-            Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-
-            ContentResolver musicResolver = getContentResolver();
-
-            Cursor musicCursor = musicResolver.query(musicUri,
-                    null,
-                    null,
-                    null,
-                    MediaStore.Audio.Media.ALBUM_ID);
-
-            int titleColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.TITLE);
-            int idColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media._ID);
-            int artistColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.ARTIST);
-            int dataColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DATA);
-            int albumIdColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID);
-
-            Cursor albumCursor = getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    null,
-                    null,
-                    null,
-                    MediaStore.Audio.Albums._ID);
-            int albumArtColumn = albumCursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART);
-
-            CursorJoiner joiner = new CursorJoiner(musicCursor, new String[] {MediaStore.Audio.Media.ALBUM_ID},
-                    albumCursor, new String[] {MediaStore.Audio.Albums._ID});
-
-            long previousAlbumId = -1;
-            String previousAlbumArtPath = null;
-
-            for(CursorJoiner.Result result : joiner) {
-                long thisId = musicCursor.getLong(idColumn);
-                String thisTitle = musicCursor.getString(titleColumn);
-                String thisArtist = musicCursor.getString(artistColumn);
-                String filePath = musicCursor.getString(dataColumn);
-                long albumId = musicCursor.getLong(albumIdColumn);
-                String albumArtPath = null;
-                SongContent.Song song = null;
-
-                switch(result) {
-                    case LEFT:
-                        if(albumId == previousAlbumId) {
-                            albumArtPath = previousAlbumArtPath;
-                        }
-                        break;
-
-                    case BOTH:
-                        albumArtPath = albumCursor.getString(albumArtColumn);
-                        previousAlbumId = albumId;
-                        previousAlbumArtPath = albumArtPath;
-                        break;
-
-                    default:
-                        break;
-                }
-
-                song = new SongContent.Song(String.valueOf(thisId),
-                        thisTitle, thisArtist, filePath, albumId, albumArtPath);
-
-                SongContent.addItem(song);
-            }
+            SongContent.ITEMS.addAll(Utils.getMusicFromDatabase(this, null));
 
             Collections.sort(SongContent.ITEMS);
         }

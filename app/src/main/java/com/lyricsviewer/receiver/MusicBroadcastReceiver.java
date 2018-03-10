@@ -12,6 +12,7 @@ import android.support.v7.app.NotificationCompat;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lyricsviewer.R;
 import com.lyricsviewer.Utils;
@@ -22,38 +23,27 @@ import static com.lyricsviewer.SongListActivity.nowPlaying;
 
 public class MusicBroadcastReceiver extends BroadcastReceiver {
 
+    public MusicBroadcastReceiver(Context context) {
+        Toast.makeText(context, "", Toast.LENGTH_SHORT).show();
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
 
         final long longId = intent.getLongExtra("id", 0);
         final String id = String.valueOf(longId);
+        Toast.makeText(context, id, Toast.LENGTH_SHORT).show();
         SongContent.Song song = SongContent.ITEM_MAP.get(id);
+
+        if(song == null) {
+            song = Utils.queryDatabaseForSong(context, longId);
+        }
 
         ImageView imageView;
         TextView title;
         TextView artist;
 
-        if(nowPlaying != null && song != null) {
-            imageView = (ImageView) nowPlaying.findViewById(R.id.imageView);
-            title = (TextView) nowPlaying.findViewById(R.id.title);
-            artist = (TextView) nowPlaying.findViewById(R.id.artist);
-
-            imageView.setImageBitmap(Utils.getSongThumbnail(song, 300));
-            title.setText(song.title);
-            artist.setText(song.artist);
-
-            if(nowPlaying != null) {
-                nowPlaying.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Utils.fireLyricsActivityIntent(v.getContext(), id);
-                    }
-                });
-            }
-        }
-
         if(song != null) {
-
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
             builder.setContentTitle(song.title);
             builder.setContentText(song.artist);
@@ -76,6 +66,25 @@ public class MusicBroadcastReceiver extends BroadcastReceiver {
             Notification notification = builder.build();
             NotificationManagerCompat notificationManger = from(context);
             notificationManger.notify(0, notification);
+        }
+
+        if(nowPlaying != null && song != null) {
+            imageView = (ImageView) nowPlaying.findViewById(R.id.imageView);
+            title = (TextView) nowPlaying.findViewById(R.id.title);
+            artist = (TextView) nowPlaying.findViewById(R.id.artist);
+
+            imageView.setImageBitmap(Utils.getSongThumbnail(song, 300));
+            title.setText(song.title);
+            artist.setText(song.artist);
+
+            if(nowPlaying != null) {
+                nowPlaying.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Utils.fireLyricsActivityIntent(v.getContext(), id);
+                    }
+                });
+            }
         }
     }
 }
